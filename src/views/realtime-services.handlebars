@@ -1,0 +1,43 @@
+<section class="hero">
+  <div>
+    <span class="eyebrow">Socket.io</span>
+    <h1>Servicios en tiempo real</h1>
+    <p>
+      Creá, actualizá o eliminá un servicio desde Postman. Esta tabla se
+      actualizará sin recargar manualmente la página.
+    </p>
+  </div>
+  <div id="socket-status" class="socket-status">Conectando…</div>
+</section>
+
+<div id="realtime-message" class="notice" hidden></div>
+
+<div class="table-card">
+  <table>
+    <thead>
+      <tr>
+        <th>Servicio</th>
+        <th>Categoría</th>
+        <th>Precio</th>
+        <th>Duración</th>
+        <th>Estado</th>
+      </tr>
+    </thead>
+    <tbody id="services-body">
+      {{#each services}}
+        <tr>
+          <td><strong>{{name}}</strong><small>{{description}}</small></td>
+          <td>{{category}}</td>
+          <td>{{currency price}}</td>
+          <td>{{duration}} min</td>
+          <td>{{#if available}}Disponible{{else}}No disponible{{/if}}</td>
+        </tr>
+      {{else}}
+        <tr><td colspan="5" class="empty">No hay servicios cargados.</td></tr>
+      {{/each}}
+    </tbody>
+  </table>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="/js/realtime-services.js"></script>

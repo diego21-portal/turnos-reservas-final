@@ -1,0 +1,56 @@
+<section class="hero">
+  <div>
+    <span class="eyebrow">Reserva con populate</span>
+    <h1>Detalle de reserva</h1>
+    <p>ID: <code>{{booking._id}}</code></p>
+  </div>
+  <span class="badge success">{{booking.status}}</span>
+</section>
+
+<div class="detail-grid">
+  <article class="detail-card">
+    <h2>Cliente</h2>
+    <p><strong>{{booking.customerName}}</strong></p>
+    <p>{{booking.customerEmail}}</p>
+    <p>Turno: {{dateTime booking.scheduledAt}}</p>
+    {{#if booking.notes}}<p>Notas: {{booking.notes}}</p>{{/if}}
+  </article>
+
+  <article class="detail-card">
+    <h2>Resumen</h2>
+    <p>Servicios asociados: {{booking.services.length}}</p>
+    <p class="total">Total: {{currency total}}</p>
+  </article>
+</div>
+
+<div class="table-card">
+  <table>
+    <thead>
+      <tr>
+        <th>Servicio</th>
+        <th>Cantidad</th>
+        <th>Precio unitario</th>
+        <th>Subtotal</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{#each booking.services}}
+        <tr>
+          {{#if service}}
+            <td><strong>{{service.name}}</strong><small>{{service.category}}</small></td>
+            <td>{{quantity}}</td>
+            <td>{{currency service.price}}</td>
+            <td>{{currency subtotal}}</td>
+          {{else}}
+            <td>Servicio eliminado</td>
+            <td>{{quantity}}</td>
+            <td>-</td>
+            <td>-</td>
+          {{/if}}
+        </tr>
+      {{else}}
+        <tr><td colspan="4" class="empty">La reserva no tiene servicios asociados.</td></tr>
+      {{/each}}
+    </tbody>
+  </table>
+</div>

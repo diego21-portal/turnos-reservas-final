@@ -1,0 +1,46 @@
+<section class="hero">
+  <div>
+    <span class="eyebrow">Vista Handlebars</span>
+    <h1>Servicios disponibles</h1>
+    <p>Listado renderizado desde MongoDB. Total: <strong>{{totalDocs}}</strong>.</p>
+  </div>
+  <a class="button" href="/realtime-services">Ver actualización en tiempo real</a>
+</section>
+
+<div class="table-card">
+  <table>
+    <thead>
+      <tr>
+        <th>Servicio</th>
+        <th>Categoría</th>
+        <th>Precio</th>
+        <th>Duración</th>
+        <th>Estado</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{#each services}}
+        <tr>
+          <td>
+            <strong>{{name}}</strong>
+            <small>{{description}}</small>
+          </td>
+          <td>{{category}}</td>
+          <td>{{currency price}}</td>
+          <td>{{duration}} min</td>
+          <td>
+            {{#if available}}
+              <span class="badge success">Disponible</span>
+            {{else}}
+              <span class="badge muted">No disponible</span>
+            {{/if}}
+          </td>
+        </tr>
+      {{else}}
+        <tr>
+          <td colspan="5" class="empty">No hay servicios cargados.</td>
+        </tr>
+      {{/each}}
+    </tbody>
+  </table>
+</div>
