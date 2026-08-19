@@ -1,77 +1,87 @@
 # Pruebas manuales de la entrega final
 
-Base URL por defecto:
+Base URL:
 
 ```text
 http://localhost:8080
 ```
 
-Usar Postman o Thunder Client.
-
-## Preparación
-
-1. Ejecutar `npm install`.
-2. Configurar `.env`.
-3. Ejecutar `npm start`.
-4. Confirmar `GET /health`.
-
-Opcionalmente:
+## Preparación obligatoria
 
 ```bash
-npm run seed
+npm ci
+npm run verify
+npm start
 ```
 
-## 1. Crear servicio
+`npm run verify` debe terminar con código 0 antes de probar Atlas.
 
-`POST /api/services`
+## 1. Salud
+
+```http
+GET /health
+```
+
+Esperado: `200`.
+
+## 2. Crear servicio
+
+```http
+POST /api/services
+Content-Type: application/json
+```
 
 ```json
 {
   "name": "Servicio prueba final",
   "description": "Servicio creado para validar la entrega final.",
-  "category": "Pruebas",
+  "category": "Salud",
   "price": 15000,
   "duration": 45,
   "available": true
 }
 ```
 
-Esperado: `201`, guardar `payload._id` como `serviceId`.
+Esperado: `201`. Guardar `payload._id` como `serviceId`.
 
-## 2. Listar servicios con consultas avanzadas
+## 3. Consultas avanzadas
+
+Probar:
 
 ```http
 GET /api/services?page=1&limit=5&available=true&minPrice=1000&maxPrice=50000&sort=asc
 ```
 
-Esperado: `200` y metadatos de paginación.
+Esperado: `200`, `payload` y metadatos de paginación.
 
-## 3. Consultar servicio por id
+### Categoría case-insensitive
+
+Aunque el servicio fue creado con `"category": "Salud"`:
+
+```http
+GET /api/services?category=salud
+```
+
+debe encontrarlo.
+
+También deben funcionar `SALUD` y `Salud`.
+
+## 4. CRUD de servicios
 
 ```http
 GET /api/services/{serviceId}
-```
-
-Esperado: `200`.
-
-## 4. Actualizar servicio
-
-```http
 PATCH /api/services/{serviceId}
+DELETE /api/services/{serviceId}
 ```
 
-```json
-{
-  "price": 16500,
-  "available": false
-}
-```
-
-Esperado: `200`.
+No eliminar el servicio hasta finalizar las pruebas de reservas.
 
 ## 5. Crear reserva
 
-`POST /api/bookings`
+```http
+POST /api/bookings
+Content-Type: application/json
+```
 
 ```json
 {
@@ -83,20 +93,13 @@ Esperado: `200`.
 }
 ```
 
-Esperado: `201`, guardar `payload._id` como `bookingId`.
+Esperado: `201`. Guardar `payload._id` como `bookingId`.
 
-## 6. Consultar reserva
-
-```http
-GET /api/bookings/{bookingId}
-```
-
-Esperado: `200`.
-
-## 7. Agregar servicio a reserva
+## 6. Agregar servicio por primera vez
 
 ```http
 POST /api/bookings/{bookingId}/services/{serviceId}
+Content-Type: application/json
 ```
 
 ```json
@@ -105,9 +108,69 @@ POST /api/bookings/{bookingId}/services/{serviceId}
 }
 ```
 
-Esperado: `200`. En la respuesta populated debe aparecer el servicio.
+Esperado:
 
-## 8. Actualizar cantidad
+```text
+200
+quantity = 2
+una sola referencia al serviceId
+```
+
+## 7. Repetir el mismo servicio
+
+Ejecutar nuevamente:
+
+```http
+POST /api/bookings/{bookingId}/services/{serviceId}
+```
+
+```json
+{
+  "quantity": 1
+}
+```
+
+Esperado:
+
+```text
+200
+quantity = 3
+services contiene una sola entrada para serviceId
+```
+
+No debe responder `409` ni duplicar el servicio.
+
+## 8. GET principal con populate
+
+```http
+GET /api/bookings/{bookingId}
+```
+
+Esperado: `200`.
+
+`services[0].service` debe ser un objeto con al menos:
+
+```text
+_id
+name
+description
+category
+price
+duration
+available
+```
+
+Esto demuestra `ObjectId + ref + populate`.
+
+La ruta:
+
+```http
+GET /api/bookings/{bookingId}/populated
+```
+
+también debe seguir funcionando como alias.
+
+## 9. Actualizar cantidad directamente
 
 ```http
 PUT /api/bookings/{bookingId}/services/{serviceId}
@@ -115,89 +178,18 @@ PUT /api/bookings/{bookingId}/services/{serviceId}
 
 ```json
 {
-  "quantity": 3
+  "quantity": 5
 }
 ```
 
-Esperado: `200`, `quantity = 3`.
+Esperado: `200`, `quantity = 5`.
 
-## 9. Consultar con populate
+## 10. Validaciones Zod
 
-```http
-GET /api/bookings/{bookingId}/populated
-```
-
-Esperado: `200` y `services[0].service` debe ser un objeto con los datos del servicio.
-
-Comparar con:
-
-```http
-GET /api/bookings/{bookingId}
-```
-
-Aquí `services[0].service` debe ser sólo el ObjectId.
-
-## 10. Vista de reserva
-
-Abrir:
-
-```text
-http://localhost:8080/bookings/{bookingId}
-```
-
-Esperado: datos de cliente, servicio, cantidad, precio y total.
-
-## 11. Quitar servicio de reserva
-
-```http
-DELETE /api/bookings/{bookingId}/services/{serviceId}
-```
-
-Esperado: `200` y array sin ese servicio.
-
-## 12. Vaciar reserva
-
-Volver a agregar el servicio y luego:
-
-```http
-DELETE /api/bookings/{bookingId}/services
-```
-
-Esperado: `200`, `services: []`.
-
-## 13. Eliminar reserva
-
-```http
-DELETE /api/bookings/{bookingId}
-```
-
-Esperado: `200`.
-
-## 14. Eliminar servicio
-
-```http
-DELETE /api/services/{serviceId}
-```
-
-Esperado: `200`.
-
-## Casos de error obligatorios
-
-### Servicio inexistente
-
-Usar un ObjectId válido que no exista:
-
-```http
-GET /api/services/000000000000000000000000
-```
-
-Esperado: `404`.
-
-### Servicio con datos incompletos
+### Body incompleto
 
 ```http
 POST /api/services
-Content-Type: application/json
 ```
 
 ```json
@@ -206,7 +198,7 @@ Content-Type: application/json
 }
 ```
 
-Esperado: `400`, error de Zod.
+Esperado: `400`.
 
 ### ObjectId inválido
 
@@ -216,45 +208,54 @@ GET /api/services/abc
 
 Esperado: `400`.
 
-### Servicio inexistente en reserva
+### Servicio inexistente
+
+Usar un ObjectId válido inexistente:
 
 ```http
-POST /api/bookings/{bookingId}/services/000000000000000000000000
-```
-
-```json
-{
-  "quantity": 1
-}
+GET /api/services/000000000000000000000000
 ```
 
 Esperado: `404`.
 
-### Reserva inexistente
+## 11. Handlebars
 
-```http
-GET /api/bookings/000000000000000000000000
+Abrir:
+
+```text
+http://localhost:8080/services
+http://localhost:8080/realtime-services
+http://localhost:8080/bookings/{bookingId}
 ```
 
-Esperado: `404`.
+Todas deben renderizar sin error.
 
-### Servicio duplicado dentro de la misma reserva
+## 12. Socket.io
 
-Agregar dos veces el mismo `serviceId`.
+1. Abrir `/realtime-services` en dos ventanas.
+2. Crear un servicio con Postman/Thunder Client.
+3. Debe aparecer sin F5.
+4. Modificar disponibilidad.
+5. Debe cambiar sin F5.
+6. Eliminar el servicio.
+7. Debe desaparecer sin F5.
 
-Esperado en el segundo intento: `409`.
+## 13. Limpieza
 
-## Socket.io
-
-1. Abrir `http://localhost:8080/realtime-services`.
-2. Mantener esa pestaña abierta.
-3. Crear un servicio con Postman.
-4. Verificar que aparece sin F5.
-5. Actualizar `available`.
-6. Verificar cambio sin F5.
-7. Eliminarlo.
-8. Verificar desaparición sin F5.
+Quitar servicio, eliminar reserva y finalmente eliminar el servicio utilizado para las pruebas.
 
 ## Resultado final
 
-La entrega está lista únicamente cuando todos los casos exitosos y de error anteriores producen los códigos esperados y las vistas funcionan sin errores visibles.
+La entrega sólo está lista cuando:
+
+```text
+npm run verify → OK
+MongoDB Atlas → OK
+CRUD → OK
+ObjectId → OK
+populate → OK
+filters/page/sort → OK
+Zod → OK
+Handlebars → OK
+Socket.io → OK
+```

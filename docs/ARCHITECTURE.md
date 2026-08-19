@@ -7,7 +7,7 @@ Cliente HTTP / navegador
         ↓
       Route
         ↓
-Validación Zod
+ Validación Zod
         ↓
     Controller
         ↓
@@ -22,25 +22,39 @@ Validación Zod
  MongoDB Atlas
 ```
 
-## Por qué se separa así
+## Responsabilidades
 
 ### Routes
-Definen endpoints y conectan middlewares/controladores. No contienen consultas MongoDB ni reglas de negocio.
+
+Definen endpoints, validaciones y conexión con controllers. No consultan MongoDB ni contienen reglas de negocio.
 
 ### Controllers
-Traducen HTTP a llamadas de aplicación y construyen la respuesta. No ejecutan Mongoose directamente.
+
+Son la frontera HTTP. Leen `req`, llaman a services y construyen la respuesta con `res`. No importan repositories, DAO, models ni Mongoose.
 
 ### Services
-Contienen reglas de negocio: existencia de recursos, servicios duplicados dentro de una reserva, validación referencial y limpieza de referencias al eliminar servicios.
+
+Contienen las reglas de negocio. Entre ellas:
+
+- existencia de recursos;
+- validación referencial entre reservas y servicios;
+- incremento de `quantity` cuando el mismo servicio vuelve a agregarse;
+- integridad referencial al eliminar servicios;
+- construcción de filtros, paginación y ordenamiento.
+
+No utilizan `req`, `res`, Mongoose ni archivos de persistencia.
 
 ### Repositories
-Presentan una interfaz clara de persistencia a la capa de servicios y ocultan detalles del DAO.
+
+Ofrecen a los services una interfaz de persistencia y delegan en los DAO. No contienen reglas de negocio.
 
 ### DAO
-Única capa que accede directamente a los modelos Mongoose y ejecuta `find`, `findByIdAndUpdate`, `populate`, `$push`, `$pull`, `$set`, etc.
+
+Son la única capa que accede directamente a los modelos Mongoose y ejecuta consultas como `find`, `findByIdAndUpdate`, `populate`, `$push`, `$pull` y `$set`.
 
 ### Models
-Representan las colecciones MongoDB.
+
+Definen la estructura persistida en MongoDB.
 
 ## Relación Booking → Service
 
@@ -55,19 +69,71 @@ services: [
 ]
 ```
 
-El campo `service` usa:
+`service` usa:
 
 ```js
 ref: "Service"
 ```
 
-Cuando se necesita información completa, el DAO ejecuta `populate("services.service")`.
+El objeto completo de Service no se guarda dentro de Booking.
+
+## Regla de quantity
+
+Cuando un servicio no está asociado a la reserva:
+
+```text
+POST servicio
+→ { service: ObjectId, quantity: cantidad }
+```
+
+Cuando ya existe:
+
+```text
+quantityActual + quantityRecibida
+→ se actualiza el único elemento existente
+```
+
+La regla se calcula en `src/services/booking.service.js`. El DAO únicamente persiste el valor final.
+
+## Populate
+
+`src/dao/booking.dao.js` define:
+
+```text
+services.service
+```
+
+como path de `populate`.
+
+El endpoint principal:
+
+```http
+GET /api/bookings/:bookingId
+```
+
+devuelve la reserva con datos completos de los servicios. La ruta histórica `/populated` se conserva como alias.
+
+## Consultas avanzadas
+
+`GET /api/services` acepta:
+
+- `page`
+- `limit`
+- `category`
+- `available`
+- `minPrice`
+- `maxPrice`
+- `sort`
+- `search`
+
+La categoría es exacta pero case-insensitive.
 
 ## Tiempo real
 
-1. El cliente abre `/realtime-services`.
+1. El navegador abre `/realtime-services`.
 2. Socket.io establece la conexión.
-3. Un POST, PUT/PATCH o DELETE modifica un servicio.
+3. POST, PUT/PATCH o DELETE modifica un servicio.
 4. El controller emite `services:changed`.
 5. El navegador recibe el evento.
-6. El cliente solicita nuevamente `/api/services` y redibuja la tabla sin recargar la página.
+6. El cliente vuelve a consultar `/api/services`.
+7. La tabla se actualiza sin F5.

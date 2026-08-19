@@ -1,131 +1,98 @@
 # Sistema Backend de Turnos y Reservas
 
-Entrega final de Backend: API REST para administrar servicios y reservas, construida con Node.js, Express, MongoDB Atlas y Mongoose. El proyecto aplica arquitectura en capas, validación con Zod, relaciones mediante `ObjectId`, consultas con `populate()`, vistas Handlebars y actualización de servicios en tiempo real con Socket.io.
+Entrega final de Backend desarrollada con Node.js, Express, MongoDB Atlas, Mongoose, Zod, Handlebars y Socket.io.
 
-## Funcionalidades
+El proyecto implementa una API REST completa para administrar servicios y reservas, con relaciones mediante `ObjectId`, consultas avanzadas, validaciones antes de la persistencia, vistas y actualización en tiempo real.
 
-- CRUD completo de servicios.
-- Filtros, paginación y ordenamiento en `GET /api/services`.
-- Creación, consulta, actualización y eliminación de reservas.
-- Asociación de servicios existentes a una reserva.
-- Las reservas guardan únicamente `{ service: ObjectId, quantity }`.
-- Consulta de reservas con datos completos de servicios usando `populate()`.
-- Validación de body, params y query params con Zod antes de acceder a MongoDB.
-- Vista `/services` con Handlebars.
-- Vista `/realtime-services` con Socket.io.
-- Vista `/bookings/:bookingId` para visualizar una reserva poblada.
-- Manejo centralizado de errores.
-- Endpoint de salud `/health`.
-- Seed opcional de servicios demo.
-- Colección de Postman incluida en `postman/`.
+## Cumplimiento explícito de la rúbrica
 
-## Tecnologías utilizadas
-
-- Node.js 20 o superior.
-- Express 5.
-- MongoDB Atlas.
-- Mongoose 9.
-- Zod 4.
-- Handlebars mediante `express-handlebars`.
-- Socket.io.
-- dotenv.
+| Criterio | Evidencia |
+|---|---|
+| Routes | `src/routes/` |
+| Controllers | `src/controllers/` |
+| Services | `src/services/` |
+| Repositories | `src/repositories/` |
+| DAO | `src/dao/` |
+| Models Mongoose | `src/models/` |
+| MongoDB Atlas | `src/config/db.config.js` |
+| Variables de entorno | `src/config/env.config.js`, `.env.example` |
+| CRUD de servicios | `src/routes/service.router.js` |
+| ObjectId + ref | `src/models/booking.model.js` |
+| `populate()` | `src/dao/booking.dao.js` |
+| Incremento de `quantity` | `src/services/booking.service.js` |
+| Filtros | `src/services/service.service.js` |
+| Paginación | `service.service.js` + `service.dao.js` |
+| Ordenamiento | `service.service.js` + `service.dao.js` |
+| Zod | `src/schemas/` |
+| Middleware de validación | `src/middlewares/validate.middleware.js` |
+| Handlebars | `src/views/` |
+| Socket.io | `src/sockets/` y `service.controller.js` |
+| Vista tiempo real | `/realtime-services` |
+| Pruebas automatizadas | `test/` + `npm test` |
+| CI | `.github/workflows/ci.yml` |
+| Verificación completa | `npm run verify` |
 
 ## Arquitectura
 
 ```text
-routes
-  ↓
-controllers
-  ↓
-services
-  ↓
-repositories
-  ↓
-DAO
-  ↓
-models / MongoDB
+Request / Browser
+       ↓
+     Route
+       ↓
+     Zod
+       ↓
+  Controller
+       ↓
+    Service
+       ↓
+  Repository
+       ↓
+      DAO
+       ↓
+Mongoose Model
+       ↓
+ MongoDB Atlas
 ```
 
-Responsabilidades:
+Cada capa tiene una única responsabilidad:
 
-- `routes`: define URLs, métodos HTTP y middlewares.
-- `controllers`: recibe request y construye response.
-- `services`: contiene reglas de negocio.
-- `repositories`: abstrae las operaciones de persistencia requeridas por los services.
-- `dao`: ejecuta consultas Mongoose.
-- `models`: define esquemas y relaciones MongoDB.
-- `schemas`: validaciones Zod.
-- `views`: vistas Handlebars.
-- `sockets`: configuración de Socket.io.
+- **Routes:** URLs, métodos HTTP y middlewares.
+- **Controllers:** leen `req`, llaman al service y construyen `res`.
+- **Services:** reglas de negocio.
+- **Repositories:** interfaz de acceso a persistencia.
+- **DAO:** consultas Mongoose.
+- **Models:** schemas y relaciones MongoDB.
+- **Schemas:** validación Zod.
+- **Views:** Handlebars.
+- **Sockets:** Socket.io.
 
-## Estructura del proyecto
+Más detalle: `docs/ARCHITECTURE.md`.
 
-```text
-.
-├── docs/
-│   ├── ARCHITECTURE.md
-│   ├── FINAL_CHECKLIST.md
-│   └── TESTING_MANUAL.md
-├── postman/
-│   └── Turnos-Reservas-Final.postman_collection.json
-├── scripts/
-│   ├── check-syntax.js
-│   └── seed.js
-├── src/
-│   ├── config/
-│   ├── controllers/
-│   ├── dao/
-│   ├── middlewares/
-│   ├── models/
-│   ├── public/
-│   ├── repositories/
-│   ├── routes/
-│   ├── schemas/
-│   ├── services/
-│   ├── sockets/
-│   ├── views/
-│   ├── app.js
-│   └── server.js
-├── .env.example
-├── .gitignore
-├── package.json
-└── README.md
-```
+## Requisitos
+
+- Node.js 20 o superior.
+- npm.
+- MongoDB Atlas.
+- Un Database User de Atlas.
+- IP autorizada en Network Access.
 
 ## Instalación
 
-Clonar el repositorio:
-
 ```bash
-git clone URL_DE_TU_REPOSITORIO
-cd NOMBRE_DEL_REPOSITORIO
+git clone https://github.com/diego21-portal/turnos-reservas-final.git
+cd turnos-reservas-final
+npm ci
 ```
-
-Instalar dependencias:
-
-```bash
-npm install
-```
-
-Después de `npm install`, conservar y subir también el `package-lock.json` generado.
 
 ## Variables de entorno
 
-Copiar `.env.example` como `.env`.
-
-En PowerShell:
+Copiar:
 
 ```powershell
 Copy-Item .env.example .env
 ```
 
-En CMD:
-
-```cmd
-copy .env.example .env
-```
-
-Configurar:
+Configurar localmente:
 
 ```env
 PORT=8080
@@ -134,9 +101,50 @@ APP_ENV=development
 MONGO_URI=mongodb+srv://USUARIO:PASSWORD@CLUSTER.mongodb.net/turnos_reservas?retryWrites=true&w=majority
 ```
 
-> Nunca subir `.env` al repositorio. Si el usuario o contraseña de Atlas contiene caracteres especiales, la credencial debe estar correctamente codificada en la URI.
+`.env` nunca debe subirse.
+
+## Verificación automática
+
+Antes de iniciar:
+
+```bash
+npm run verify
+```
+
+Este comando ejecuta:
+
+```text
+npm run check
+npm test
+```
+
+Por separado:
+
+```bash
+npm run check
+npm test
+npm run test:architecture
+```
+
+Las pruebas cubren:
+
+- regla de incremento de `quantity`;
+- no duplicación del mismo servicio;
+- límite de cantidad;
+- filtro case-insensitive;
+- filtros/paginación/ordenamiento;
+- validaciones Zod;
+- endpoint principal de bookings con populate;
+- arquitectura por capas;
+- ObjectId y `ref: "Service"`;
+- existencia de `MessageModel`;
+- `populate()` en DAO.
 
 ## Ejecución
+
+```bash
+npm start
+```
 
 Modo desarrollo:
 
@@ -144,153 +152,105 @@ Modo desarrollo:
 npm run dev
 ```
 
-Modo normal:
-
-```bash
-npm start
-```
-
-Cargar servicios demo opcionales:
+Seed opcional:
 
 ```bash
 npm run seed
 ```
 
-Verificar sintaxis del proyecto:
-
-```bash
-npm run check
-```
-
-Aplicación por defecto:
+Servidor:
 
 ```text
 http://localhost:8080
 ```
 
-## Endpoints principales
-
-### Estado
-
-| Método | Endpoint | Descripción |
-|---|---|---|
-| GET | `/health` | Comprueba que la aplicación responde |
-
-### Servicios
-
-| Método | Endpoint | Descripción |
-|---|---|---|
-| POST | `/api/services` | Crear servicio |
-| GET | `/api/services` | Listar servicios con consultas avanzadas |
-| GET | `/api/services/:serviceId` | Consultar servicio por id |
-| PUT/PATCH | `/api/services/:serviceId` | Actualizar servicio |
-| DELETE | `/api/services/:serviceId` | Eliminar servicio |
-
-### Query params de `GET /api/services`
-
-| Parámetro | Ejemplo | Uso |
-|---|---|---|
-| `page` | `1` | Página actual |
-| `limit` | `10` | Resultados por página, máximo 100 |
-| `category` | `Consultas` | Filtrar por categoría |
-| `available` | `true` | Filtrar disponibilidad |
-| `minPrice` | `5000` | Precio mínimo |
-| `maxPrice` | `20000` | Precio máximo |
-| `sort` | `asc` o `desc` | Ordenar por precio |
-| `search` | `consulta` | Buscar en nombre o descripción |
-
-Ejemplo:
+Salud:
 
 ```http
-GET /api/services?page=1&limit=5&category=Consultas&available=true&minPrice=5000&maxPrice=20000&sort=asc
+GET /health
 ```
 
-Respuesta paginada:
+## CRUD de servicios
 
-```json
-{
-  "status": "success",
-  "payload": [],
-  "totalDocs": 0,
-  "totalPages": 1,
-  "page": 1,
-  "limit": 5,
-  "hasPrevPage": false,
-  "hasNextPage": false,
-  "prevPage": null,
-  "nextPage": null
-}
-```
-
-### Reservas
-
-| Método | Endpoint | Descripción |
+| Método | Endpoint | Uso |
 |---|---|---|
-| POST | `/api/bookings` | Crear reserva |
-| GET | `/api/bookings` | Listar reservas |
-| GET | `/api/bookings/:bookingId` | Consultar reserva sin populate |
-| GET | `/api/bookings/:bookingId/populated` | Consultar reserva con populate |
-| PATCH | `/api/bookings/:bookingId` | Actualizar datos de la reserva |
-| DELETE | `/api/bookings/:bookingId` | Eliminar reserva |
-| POST | `/api/bookings/:bookingId/services/:serviceId` | Agregar servicio |
-| PUT/PATCH | `/api/bookings/:bookingId/services/:serviceId` | Actualizar cantidad |
-| DELETE | `/api/bookings/:bookingId/services/:serviceId` | Quitar un servicio |
-| DELETE | `/api/bookings/:bookingId/services` | Vaciar servicios de la reserva |
+| POST | `/api/services` | Crear |
+| GET | `/api/services` | Listar/filtrar/paginar/ordenar |
+| GET | `/api/services/:serviceId` | Obtener uno |
+| PUT/PATCH | `/api/services/:serviceId` | Actualizar |
+| DELETE | `/api/services/:serviceId` | Eliminar |
 
-También puede usarse:
+### Consultas avanzadas
 
 ```http
-GET /api/bookings?page=1&limit=10&status=pending&populate=true
+GET /api/services?page=1&limit=5&category=salud&available=true&minPrice=1000&maxPrice=20000&sort=asc&search=consulta
 ```
 
-## Ejemplos de body
+Query params:
 
-### Crear servicio
+| Parámetro | Uso |
+|---|---|
+| `page` | página |
+| `limit` | tamaño de página (máx. 100) |
+| `category` | categoría exacta sin distinguir mayúsculas |
+| `available` | `true` / `false` |
+| `minPrice` | precio mínimo |
+| `maxPrice` | precio máximo |
+| `sort` | `asc` / `desc` por precio |
+| `search` | nombre o descripción |
 
-```json
-{
-  "name": "Consulta inicial",
-  "description": "Evaluación inicial para definir el servicio requerido.",
-  "category": "Consultas",
-  "price": 12000,
-  "duration": 45,
-  "available": true
-}
+Ejemplo: si MongoDB contiene `"category": "Salud"`, las siguientes consultas coinciden:
+
+```text
+?category=salud
+?category=Salud
+?category=SALUD
 ```
 
-### Crear reserva con servicios
+## Reservas
 
-```json
-{
-  "customerName": "Cliente Ejemplo",
-  "customerEmail": "diego@example.com",
-  "scheduledAt": "2026-08-20T15:30:00.000Z",
-  "notes": "Primera visita",
-  "services": [
-    {
-      "serviceId": "REEMPLAZAR_POR_OBJECT_ID_REAL",
-      "quantity": 1
-    }
-  ]
-}
+| Método | Endpoint | Uso |
+|---|---|---|
+| POST | `/api/bookings` | Crear |
+| GET | `/api/bookings` | Listar |
+| GET | `/api/bookings/:bookingId` | Consultar con populate |
+| GET | `/api/bookings/:bookingId/populated` | Alias de consulta poblada |
+| PATCH | `/api/bookings/:bookingId` | Actualizar |
+| DELETE | `/api/bookings/:bookingId` | Eliminar |
+| POST | `/api/bookings/:bookingId/services/:serviceId` | Agregar o incrementar |
+| PUT/PATCH | `/api/bookings/:bookingId/services/:serviceId` | Fijar quantity |
+| DELETE | `/api/bookings/:bookingId/services/:serviceId` | Quitar servicio |
+| DELETE | `/api/bookings/:bookingId/services` | Vaciar servicios |
+
+## Relación con ObjectId
+
+`Booking` almacena:
+
+```js
+services: [
+  {
+    service: ObjectId,
+    quantity: Number
+  }
+]
 ```
 
-En MongoDB la relación se guarda de esta forma:
+El schema utiliza:
 
-```json
-{
-  "services": [
-    {
-      "service": "ObjectId(...) ",
-      "quantity": 1
-    }
-  ]
-}
+```js
+type: mongoose.Schema.Types.ObjectId,
+ref: "Service"
 ```
 
-No se almacena el objeto completo del servicio dentro de la reserva.
+La reserva nunca persiste el objeto completo de Service.
 
-### Agregar servicio a una reserva
+## Regla de negocio: servicio repetido
+
+Primera petición:
+
+```http
+POST /api/bookings/:bookingId/services/:serviceId
+```
 
 ```json
 {
@@ -298,112 +258,145 @@ No se almacena el objeto completo del servicio dentro de la reserva.
 }
 ```
 
-### Actualizar cantidad
+Resultado:
 
 ```json
 {
+  "service": "ObjectId",
+  "quantity": 2
+}
+```
+
+Segunda petición para el mismo `serviceId`:
+
+```json
+{
+  "quantity": 1
+}
+```
+
+Resultado:
+
+```json
+{
+  "service": "ObjectId",
   "quantity": 3
 }
 ```
 
-## Vistas Handlebars
+No se duplica la entrada. La suma se calcula en `booking.service.js`, nunca en el DAO.
 
-```text
-GET /services
-GET /realtime-services
-GET /bookings/:bookingId
-```
+## Populate
 
-La vista `/realtime-services` recibe eventos de Socket.io cuando un servicio es creado, actualizado o eliminado desde la API. La tabla vuelve a consultar los datos automáticamente, sin recargar manualmente la página.
+El DAO configura:
 
-## Pruebas manuales
-
-Importar en Postman:
-
-```text
-postman/Turnos-Reservas-Final.postman_collection.json
-```
-
-La guía completa está en:
-
-```text
-docs/TESTING_MANUAL.md
-```
-
-Como mínimo verificar:
-
-1. crear servicio;
-2. listar servicios;
-3. consultar servicio por id;
-4. actualizar servicio;
-5. eliminar servicio;
-6. crear reserva;
-7. consultar reserva;
-8. agregar servicio a reserva;
-9. eliminar servicio de reserva;
-10. actualizar cantidad;
-11. vaciar o eliminar reserva;
-12. consultar reserva con `populate()`;
-13. casos de error;
-14. vistas;
-15. Socket.io.
-
-## Manejo de errores
-
-La API devuelve errores JSON consistentes. Ejemplo:
-
-```json
+```js
 {
-  "status": "error",
-  "message": "Datos inválidos en body",
-  "details": [
-    {
-      "path": "name",
-      "message": "Too small: expected string to have >=3 characters"
-    }
-  ]
+  path: "services.service",
+  select: "name description category price duration available"
 }
 ```
 
-Códigos usados principalmente:
+Por eso:
 
-- `400`: datos inválidos.
-- `404`: recurso inexistente.
-- `409`: conflicto, por ejemplo servicio duplicado dentro de una reserva.
-- `500`: error interno inesperado.
+```http
+GET /api/bookings/:bookingId
+```
 
-## Integridad entre servicios y reservas
+devuelve datos completos del servicio relacionado.
 
-Cuando un servicio es eliminado, su referencia también se quita de las reservas que lo contenían. Esto evita dejar referencias inválidas que luego produzcan un `populate()` incompleto.
+## Validación Zod
 
-## Checklist previa a la entrega
+Las rutas validan `body`, `params` y `query` antes del controller.
 
-Consultar:
+Ejemplos:
 
 ```text
-docs/FINAL_CHECKLIST.md
+POST service incompleto → 400
+ObjectId inválido → 400
+query inválida → 400
 ```
 
-Antes de pegar el enlace en la plataforma ejecutar:
+## Handlebars
 
-```bash
-npm run check
-git status
-git log --oneline -5
+Vistas:
+
+```text
+/services
+/realtime-services
+/bookings/:bookingId
 ```
 
-Y verificar en GitHub que NO existan:
+## Socket.io
+
+La vista:
+
+```text
+/realtime-services
+```
+
+escucha `services:changed`.
+
+Al crear, actualizar o eliminar un servicio:
+
+```text
+API cambia servicio
+      ↓
+service.controller.js
+      ↓
+io.emit("services:changed")
+      ↓
+navegadores conectados
+      ↓
+tabla se actualiza sin F5
+```
+
+## Modelo Message
+
+Se conserva el modelo MongoDB requerido en la evolución del proyecto:
+
+```text
+src/models/message.model.js
+```
+
+No se agregan endpoints de messages porque la consigna final no los exige.
+
+## Documentación de comprobación
+
+- `docs/ARCHITECTURE.md`
+- `docs/TESTING_MANUAL.md`
+- `docs/FINAL_CHECKLIST.md`
+- `postman/Turnos-Reservas-Final.postman_collection.json`
+
+## Seguridad del repositorio
+
+No versionar:
 
 ```text
 .env
 node_modules/
-credenciales de MongoDB Atlas
+credenciales reales
 ```
 
-## Notas adicionales
+Comprobar:
 
-- La persistencia principal es MongoDB Atlas mediante Mongoose.
-- La validación ocurre antes de los services/repositories/DAO.
-- El acceso a datos está aislado en DAO.
-- Los datos relacionados se resuelven con `populate()` sólo cuando la consulta lo requiere.
-- El proyecto está pensado para evaluación local y para futuras mejoras como autenticación, disponibilidad por franjas horarias, tests automatizados o documentación OpenAPI.
+```bash
+git ls-files .env
+git ls-files node_modules
+```
+
+Ambos comandos deben devolver vacío.
+
+## Entrega
+
+Antes del último envío:
+
+```bash
+npm ci
+npm run verify
+git status
+```
+
+Luego probar MongoDB Atlas, CRUD, populate, Zod, vistas y Socket.io siguiendo `docs/FINAL_CHECKLIST.md`.
+
+No entregar mientras algún punto del checklist esté pendiente.

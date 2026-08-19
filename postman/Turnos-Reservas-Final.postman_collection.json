@@ -1,8 +1,8 @@
 {
   "info": {
-    "_postman_id": "d2b2f7bf-7bb4-43a8-9f17-turnos-reservas-final",
-    "name": "Turnos y Reservas - Entrega Final",
-    "description": "Colección ordenada para verificar CRUD de servicios, reservas, relación ObjectId, populate, validaciones y errores.",
+    "_postman_id": "9fd7cf28-84ec-4ebd-8eb8-correccion-final",
+    "name": "Turnos y Reservas - Corrección Final",
+    "description": "Colección para verificar CRUD, consultas avanzadas, Zod, ObjectId, populate e incremento de quantity.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -31,16 +31,16 @@
         {
           "listen": "test",
           "script": {
+            "type": "text/javascript",
             "exec": [
-              "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });"
-            ],
-            "type": "text/javascript"
+              "pm.test(\"Status 200\", () => pm.response.to.have.status(200));"
+            ]
           }
         }
       ]
     },
     {
-      "name": "01 - Crear servicio",
+      "name": "01 - Crear servicio Salud",
       "request": {
         "method": "POST",
         "header": [
@@ -52,7 +52,7 @@
         "url": "{{baseUrl}}/api/services",
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"name\": \"Servicio Postman Final\",\n  \"description\": \"Servicio creado automáticamente desde la colección de pruebas.\",\n  \"category\": \"Pruebas\",\n  \"price\": 15000,\n  \"duration\": 45,\n  \"available\": true\n}",
+          "raw": "{\n  \"name\": \"Consulta final\",\n  \"description\": \"Servicio creado para la corrección final.\",\n  \"category\": \"Salud\",\n  \"price\": 15000,\n  \"duration\": 45,\n  \"available\": true\n}",
           "options": {
             "raw": {
               "language": "json"
@@ -64,38 +64,41 @@
         {
           "listen": "test",
           "script": {
+            "type": "text/javascript",
             "exec": [
-              "pm.test(\"Status 201\", function () { pm.response.to.have.status(201); });",
-              "const json = pm.response.json();",
-              "if (json.payload && json.payload._id) pm.collectionVariables.set(\"serviceId\", json.payload._id);"
-            ],
-            "type": "text/javascript"
+              "pm.test(\"Status 201\", () => pm.response.to.have.status(201));",
+              "const j = pm.response.json();",
+              "pm.expect(j.payload).to.have.property(\"_id\");",
+              "pm.collectionVariables.set(\"serviceId\", j.payload._id);"
+            ]
           }
         }
       ]
     },
     {
-      "name": "02 - Listar servicios con filtros",
+      "name": "02 - Filtros + paginación + sort + category case-insensitive",
       "request": {
         "method": "GET",
         "header": [],
-        "url": "{{baseUrl}}/api/services?page=1&limit=5&available=true&minPrice=1000&maxPrice=50000&sort=asc"
+        "url": "{{baseUrl}}/api/services?page=1&limit=5&category=salud&available=true&minPrice=1000&maxPrice=50000&sort=asc"
       },
       "event": [
         {
           "listen": "test",
           "script": {
+            "type": "text/javascript",
             "exec": [
-              "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });",
-              "pm.test(\"Respuesta paginada\", function () { const j=pm.response.json(); pm.expect(j).to.have.property(\"totalPages\"); pm.expect(j.payload).to.be.an(\"array\"); });"
-            ],
-            "type": "text/javascript"
+              "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+              "const j = pm.response.json();",
+              "pm.test(\"Paginación\", () => { pm.expect(j).to.have.property(\"totalPages\"); pm.expect(j.page).to.eql(1); pm.expect(j.limit).to.eql(5); });",
+              "pm.test(\"Category sin distinguir mayúsculas\", () => { pm.expect(j.payload.some(x => x._id === pm.collectionVariables.get(\"serviceId\"))).to.eql(true); });"
+            ]
           }
         }
       ]
     },
     {
-      "name": "03 - Consultar servicio por id",
+      "name": "03 - Consultar servicio",
       "request": {
         "method": "GET",
         "header": [],
@@ -105,10 +108,10 @@
         {
           "listen": "test",
           "script": {
+            "type": "text/javascript",
             "exec": [
-              "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });"
-            ],
-            "type": "text/javascript"
+              "pm.test(\"Status 200\", () => pm.response.to.have.status(200));"
+            ]
           }
         }
       ]
@@ -126,7 +129,7 @@
         "url": "{{baseUrl}}/api/services/{{serviceId}}",
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"price\": 16500,\n  \"available\": false\n}",
+          "raw": "{\n  \"price\": 16500,\n  \"available\": true\n}",
           "options": {
             "raw": {
               "language": "json"
@@ -138,10 +141,10 @@
         {
           "listen": "test",
           "script": {
+            "type": "text/javascript",
             "exec": [
-              "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });"
-            ],
-            "type": "text/javascript"
+              "pm.test(\"Status 200\", () => pm.response.to.have.status(200));"
+            ]
           }
         }
       ]
@@ -159,7 +162,7 @@
         "url": "{{baseUrl}}/api/bookings",
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"customerName\": \"Cliente Postman\",\n  \"customerEmail\": \"cliente@example.com\",\n  \"scheduledAt\": \"2026-08-25T15:00:00.000Z\",\n  \"notes\": \"Reserva generada por la colección\",\n  \"services\": []\n}",
+          "raw": "{\n  \"customerName\": \"Cliente Corrección\",\n  \"customerEmail\": \"cliente@example.com\",\n  \"scheduledAt\": \"2026-08-25T15:00:00.000Z\",\n  \"notes\": \"Reserva para verificar la rúbrica\",\n  \"services\": []\n}",
           "options": {
             "raw": {
               "language": "json"
@@ -171,37 +174,18 @@
         {
           "listen": "test",
           "script": {
+            "type": "text/javascript",
             "exec": [
-              "pm.test(\"Status 201\", function () { pm.response.to.have.status(201); });",
-              "const json = pm.response.json();",
-              "if (json.payload && json.payload._id) pm.collectionVariables.set(\"bookingId\", json.payload._id);"
-            ],
-            "type": "text/javascript"
+              "pm.test(\"Status 201\", () => pm.response.to.have.status(201));",
+              "const j = pm.response.json();",
+              "pm.collectionVariables.set(\"bookingId\", j.payload._id);"
+            ]
           }
         }
       ]
     },
     {
-      "name": "06 - Consultar reserva sin populate",
-      "request": {
-        "method": "GET",
-        "header": [],
-        "url": "{{baseUrl}}/api/bookings/{{bookingId}}"
-      },
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });"
-            ],
-            "type": "text/javascript"
-          }
-        }
-      ]
-    },
-    {
-      "name": "07 - Agregar servicio a reserva",
+      "name": "06 - Agregar servicio quantity 2",
       "request": {
         "method": "POST",
         "header": [
@@ -225,89 +209,20 @@
         {
           "listen": "test",
           "script": {
+            "type": "text/javascript",
             "exec": [
-              "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });"
-            ],
-            "type": "text/javascript"
+              "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+              "const j = pm.response.json();",
+              "const id = pm.collectionVariables.get(\"serviceId\");",
+              "const item = j.payload.services.find(x => (x.service?._id || x.service) === id);",
+              "pm.test(\"quantity = 2\", () => pm.expect(item.quantity).to.eql(2));"
+            ]
           }
         }
       ]
     },
     {
-      "name": "08 - Actualizar cantidad",
-      "request": {
-        "method": "PUT",
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
-        ],
-        "url": "{{baseUrl}}/api/bookings/{{bookingId}}/services/{{serviceId}}",
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"quantity\": 3\n}",
-          "options": {
-            "raw": {
-              "language": "json"
-            }
-          }
-        }
-      },
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });",
-              "pm.test(\"Cantidad 3\", function () { const j=pm.response.json(); const item=j.payload.services.find(x => x.service && x.service._id === pm.collectionVariables.get(\"serviceId\")); pm.expect(item.quantity).to.eql(3); });"
-            ],
-            "type": "text/javascript"
-          }
-        }
-      ]
-    },
-    {
-      "name": "09 - Consultar reserva con populate",
-      "request": {
-        "method": "GET",
-        "header": [],
-        "url": "{{baseUrl}}/api/bookings/{{bookingId}}/populated"
-      },
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });",
-              "pm.test(\"Servicio poblado\", function () { const j=pm.response.json(); pm.expect(j.payload.services[0].service).to.be.an(\"object\"); });"
-            ],
-            "type": "text/javascript"
-          }
-        }
-      ]
-    },
-    {
-      "name": "10 - Quitar servicio de reserva",
-      "request": {
-        "method": "DELETE",
-        "header": [],
-        "url": "{{baseUrl}}/api/bookings/{{bookingId}}/services/{{serviceId}}"
-      },
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });"
-            ],
-            "type": "text/javascript"
-          }
-        }
-      ]
-    },
-    {
-      "name": "11 - Reagregar servicio",
+      "name": "07 - Repetir servicio e incrementar quantity",
       "request": {
         "method": "POST",
         "header": [
@@ -331,55 +246,63 @@
         {
           "listen": "test",
           "script": {
+            "type": "text/javascript",
             "exec": [
-              "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });"
-            ],
-            "type": "text/javascript"
+              "pm.test(\"Status 200 (no 409)\", () => pm.response.to.have.status(200));",
+              "const j = pm.response.json();",
+              "const id = pm.collectionVariables.get(\"serviceId\");",
+              "const matches = j.payload.services.filter(x => (x.service?._id || x.service) === id);",
+              "pm.test(\"No duplica el servicio\", () => pm.expect(matches.length).to.eql(1));",
+              "pm.test(\"quantity = 3\", () => pm.expect(matches[0].quantity).to.eql(3));"
+            ]
           }
         }
       ]
     },
     {
-      "name": "12 - Vaciar reserva",
-      "request": {
-        "method": "DELETE",
-        "header": [],
-        "url": "{{baseUrl}}/api/bookings/{{bookingId}}/services"
-      },
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });",
-              "pm.test(\"Reserva vacía\", function () { const j=pm.response.json(); pm.expect(j.payload.services).to.eql([]); });"
-            ],
-            "type": "text/javascript"
-          }
-        }
-      ]
-    },
-    {
-      "name": "13 - Error servicio inexistente",
+      "name": "08 - GET principal con populate",
       "request": {
         "method": "GET",
         "header": [],
-        "url": "{{baseUrl}}/api/services/000000000000000000000000"
+        "url": "{{baseUrl}}/api/bookings/{{bookingId}}"
       },
       "event": [
         {
           "listen": "test",
           "script": {
+            "type": "text/javascript",
             "exec": [
-              "pm.test(\"Status 404\", function () { pm.response.to.have.status(404); });"
-            ],
-            "type": "text/javascript"
+              "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+              "const j = pm.response.json();",
+              "pm.test(\"Servicio poblado\", () => { pm.expect(j.payload.services[0].service).to.be.an(\"object\"); pm.expect(j.payload.services[0].service).to.have.property(\"name\"); });"
+            ]
           }
         }
       ]
     },
     {
-      "name": "14 - Error body inválido",
+      "name": "09 - Alias populated",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/bookings/{{bookingId}}/populated"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+              "const j = pm.response.json();",
+              "pm.test(\"Servicio poblado\", () => pm.expect(j.payload.services[0].service).to.be.an(\"object\"));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "10 - Zod body inválido",
       "request": {
         "method": "POST",
         "header": [
@@ -403,16 +326,16 @@
         {
           "listen": "test",
           "script": {
+            "type": "text/javascript",
             "exec": [
-              "pm.test(\"Status 400\", function () { pm.response.to.have.status(400); });"
-            ],
-            "type": "text/javascript"
+              "pm.test(\"Status 400\", () => pm.response.to.have.status(400));"
+            ]
           }
         }
       ]
     },
     {
-      "name": "15 - Error ObjectId inválido",
+      "name": "11 - ObjectId inválido",
       "request": {
         "method": "GET",
         "header": [],
@@ -422,16 +345,35 @@
         {
           "listen": "test",
           "script": {
+            "type": "text/javascript",
             "exec": [
-              "pm.test(\"Status 400\", function () { pm.response.to.have.status(400); });"
-            ],
-            "type": "text/javascript"
+              "pm.test(\"Status 400\", () => pm.response.to.have.status(400));"
+            ]
           }
         }
       ]
     },
     {
-      "name": "16 - Eliminar reserva",
+      "name": "12 - Servicio inexistente",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/services/000000000000000000000000"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Status 404\", () => pm.response.to.have.status(404));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "13 - Eliminar reserva",
       "request": {
         "method": "DELETE",
         "header": [],
@@ -441,16 +383,16 @@
         {
           "listen": "test",
           "script": {
+            "type": "text/javascript",
             "exec": [
-              "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });"
-            ],
-            "type": "text/javascript"
+              "pm.test(\"Status 200\", () => pm.response.to.have.status(200));"
+            ]
           }
         }
       ]
     },
     {
-      "name": "17 - Eliminar servicio",
+      "name": "14 - Eliminar servicio",
       "request": {
         "method": "DELETE",
         "header": [],
@@ -460,10 +402,10 @@
         {
           "listen": "test",
           "script": {
+            "type": "text/javascript",
             "exec": [
-              "pm.test(\"Status 200\", function () { pm.response.to.have.status(200); });"
-            ],
-            "type": "text/javascript"
+              "pm.test(\"Status 200\", () => pm.response.to.have.status(200));"
+            ]
           }
         }
       ]
