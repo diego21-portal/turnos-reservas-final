@@ -31,13 +31,29 @@ class ServiceService {
 
     const filter = {};
 
-    if (category) filter.category = category;
-    if (available !== undefined) filter.available = available;
+    // Coincidencia exacta por categoría, pero sin distinguir mayúsculas.
+    // "salud", "Salud" y "SALUD" encuentran la misma categoría.
+    if (category) {
+      filter.category = new RegExp(
+        `^${escapeRegex(category)}$`,
+        "i"
+      );
+    }
+
+    if (available !== undefined) {
+      filter.available = available;
+    }
 
     if (minPrice !== undefined || maxPrice !== undefined) {
       filter.price = {};
-      if (minPrice !== undefined) filter.price.$gte = minPrice;
-      if (maxPrice !== undefined) filter.price.$lte = maxPrice;
+
+      if (minPrice !== undefined) {
+        filter.price.$gte = minPrice;
+      }
+
+      if (maxPrice !== undefined) {
+        filter.price.$lte = maxPrice;
+      }
     }
 
     if (search) {
@@ -61,7 +77,10 @@ class ServiceService {
       serviceRepository.count(filter)
     ]);
 
-    const totalPages = Math.max(1, Math.ceil(totalDocs / limit));
+    const totalPages = Math.max(
+      1,
+      Math.ceil(totalDocs / limit)
+    );
 
     return {
       payload,
@@ -79,19 +98,27 @@ class ServiceService {
   async update(id, data) {
     await this.getById(id);
     const updated = await serviceRepository.update(id, data);
-    if (!updated) throw new AppError("Servicio no encontrado", 404);
+
+    if (!updated) {
+      throw new AppError("Servicio no encontrado", 404);
+    }
+
     return updated;
   }
 
   async delete(id) {
     await this.getById(id);
 
-    // Mantiene integridad referencial: si se elimina un servicio,
-    // se retira su referencia de todas las reservas que lo contengan.
+    // Mantiene integridad referencial: al eliminar un servicio se retira
+    // la referencia de todas las reservas que lo contengan.
     await bookingRepository.removeServiceFromAllBookings(id);
 
     const deleted = await serviceRepository.delete(id);
-    if (!deleted) throw new AppError("Servicio no encontrado", 404);
+
+    if (!deleted) {
+      throw new AppError("Servicio no encontrado", 404);
+    }
+
     return deleted;
   }
 }
