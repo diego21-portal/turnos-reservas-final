@@ -1,14 +1,17 @@
 {
   "name": "sistema-turnos-reservas-backend",
-  "version": "1.0.0",
-  "description": "API backend final para gestión de servicios y reservas con arquitectura en capas, MongoDB, Zod, Handlebars y Socket.io.",
+  "version": "1.0.1",
+  "description": "API backend final para gestión de servicios y reservas con arquitectura en capas, MongoDB, Zod, Handlebars, Socket.io y pruebas automatizadas.",
   "type": "module",
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
     "dev": "node --watch src/server.js",
     "seed": "node scripts/seed.js",
-    "check": "node scripts/check-syntax.js"
+    "check": "node scripts/check-syntax.js",
+    "test": "node --test",
+    "test:architecture": "node --test test/architecture.test.js",
+    "verify": "npm run check && npm test"
   },
   "engines": {
     "node": ">=20"
