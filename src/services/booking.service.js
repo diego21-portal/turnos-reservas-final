@@ -6,7 +6,7 @@ function assertUniqueServiceIds(services) {
   const ids = services.map((item) => item.serviceId);
   if (new Set(ids).size !== ids.length) {
     throw new AppError(
-      "Una reserva no puede contener el mismo servicio más de una vez",
+      "Una reserva no puede contener el mismo servicio más de una vez al crearla",
       400
     );
   }
@@ -52,6 +52,7 @@ class BookingService {
   async list(query) {
     const { page = 1, limit = 10, status, populate = false } = query;
     const filter = {};
+
     if (status) filter.status = status;
 
     const skip = (page - 1) * limit;
@@ -82,7 +83,10 @@ class BookingService {
 
   async update(id, data) {
     await this.getById(id);
-    const updated = await bookingRepository.update(id, data, { populate: true });
+    const updated = await bookingRepository.update(id, data, {
+      populate: true
+    });
+
     if (!updated) throw new AppError("Reserva no encontrada", 404);
     return updated;
   }
@@ -90,6 +94,7 @@ class BookingService {
   async delete(id) {
     await this.getById(id);
     const deleted = await bookingRepository.delete(id);
+
     if (!deleted) throw new AppError("Reserva no encontrada", 404);
     return deleted;
   }
@@ -100,14 +105,35 @@ class BookingService {
       serviceRepository.getById(serviceId)
     ]);
 
-    if (!service) throw new AppError("Servicio no encontrado", 404);
+    if (!service) {
+      throw new AppError("Servicio no encontrado", 404);
+    }
 
-    const alreadyExists = booking.services.some(
+    const existingItem = booking.services.find(
       (item) => String(item.service) === serviceId
     );
 
-    if (alreadyExists) {
-      throw new AppError("El servicio ya está asociado a la reserva", 409);
+    if (existingItem) {
+      const nextQuantity = existingItem.quantity + quantity;
+
+      if (nextQuantity > 100) {
+        throw new AppError(
+          "La cantidad total del servicio en la reserva no puede superar 100",
+          400
+        );
+      }
+
+      const updated = await bookingRepository.updateServiceQuantity(
+        bookingId,
+        serviceId,
+        nextQuantity
+      );
+
+      if (!updated) {
+        throw new AppError("No se pudo incrementar la cantidad", 409);
+      }
+
+      return updated;
     }
 
     const updated = await bookingRepository.addService(
@@ -117,10 +143,33 @@ class BookingService {
     );
 
     if (!updated) {
-      throw new AppError(
-        "No se pudo agregar el servicio; verifique que no esté duplicado",
-        409
+      // Defensa ante una condición de carrera: si otra petición agregó el
+      // servicio entre la lectura y el update, recuperamos el estado actual.
+      const currentBooking = await this.getById(bookingId);
+      const currentItem = currentBooking.services.find(
+        (item) => String(item.service) === serviceId
       );
+
+      if (currentItem) {
+        const nextQuantity = currentItem.quantity + quantity;
+
+        if (nextQuantity > 100) {
+          throw new AppError(
+            "La cantidad total del servicio en la reserva no puede superar 100",
+            400
+          );
+        }
+
+        const incremented = await bookingRepository.updateServiceQuantity(
+          bookingId,
+          serviceId,
+          nextQuantity
+        );
+
+        if (incremented) return incremented;
+      }
+
+      throw new AppError("No se pudo agregar el servicio a la reserva", 409);
     }
 
     return updated;
@@ -159,7 +208,11 @@ class BookingService {
       throw new AppError("El servicio no está asociado a la reserva", 404);
     }
 
-    const updated = await bookingRepository.removeService(bookingId, serviceId);
+    const updated = await bookingRepository.removeService(
+      bookingId,
+      serviceId
+    );
+
     if (!updated) throw new AppError("Reserva no encontrada", 404);
     return updated;
   }
@@ -167,6 +220,7 @@ class BookingService {
   async clearServices(bookingId) {
     await this.getById(bookingId);
     const updated = await bookingRepository.clearServices(bookingId);
+
     if (!updated) throw new AppError("Reserva no encontrada", 404);
     return updated;
   }

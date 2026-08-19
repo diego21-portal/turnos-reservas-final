@@ -8,13 +8,24 @@ export async function listBookings(req, res) {
 
 export async function getBookingById(req, res) {
   const { bookingId } = req.validated?.params ?? req.params;
-  const booking = await bookingService.getById(bookingId);
+
+  // El endpoint principal devuelve la relación completa mediante populate.
+  // Esto hace explícito el requisito de la entrega final.
+  const booking = await bookingService.getById(bookingId, {
+    populate: true
+  });
+
   res.json({ status: "success", payload: booking });
 }
 
 export async function getPopulatedBooking(req, res) {
   const { bookingId } = req.validated?.params ?? req.params;
-  const booking = await bookingService.getById(bookingId, { populate: true });
+
+  // Alias conservado por compatibilidad con el proyecto ya entregado.
+  const booking = await bookingService.getById(bookingId, {
+    populate: true
+  });
+
   res.json({ status: "success", payload: booking });
 }
 
@@ -34,6 +45,7 @@ export async function updateBooking(req, res) {
 export async function deleteBooking(req, res) {
   const { bookingId } = req.validated?.params ?? req.params;
   const booking = await bookingService.delete(bookingId);
+
   res.json({
     status: "success",
     message: "Reserva eliminada correctamente",
@@ -42,8 +54,10 @@ export async function deleteBooking(req, res) {
 }
 
 export async function addServiceToBooking(req, res) {
-  const { bookingId, serviceId } = req.validated?.params ?? req.params;
+  const { bookingId, serviceId } =
+    req.validated?.params ?? req.params;
   const { quantity } = req.validated?.body ?? req.body;
+
   const booking = await bookingService.addService(
     bookingId,
     serviceId,
@@ -52,14 +66,16 @@ export async function addServiceToBooking(req, res) {
 
   res.json({
     status: "success",
-    message: "Servicio agregado a la reserva",
+    message: "Servicio agregado o cantidad incrementada correctamente",
     payload: booking
   });
 }
 
 export async function updateBookingServiceQuantity(req, res) {
-  const { bookingId, serviceId } = req.validated?.params ?? req.params;
+  const { bookingId, serviceId } =
+    req.validated?.params ?? req.params;
   const { quantity } = req.validated?.body ?? req.body;
+
   const booking = await bookingService.updateServiceQuantity(
     bookingId,
     serviceId,
@@ -74,8 +90,13 @@ export async function updateBookingServiceQuantity(req, res) {
 }
 
 export async function removeServiceFromBooking(req, res) {
-  const { bookingId, serviceId } = req.validated?.params ?? req.params;
-  const booking = await bookingService.removeService(bookingId, serviceId);
+  const { bookingId, serviceId } =
+    req.validated?.params ?? req.params;
+
+  const booking = await bookingService.removeService(
+    bookingId,
+    serviceId
+  );
 
   res.json({
     status: "success",
